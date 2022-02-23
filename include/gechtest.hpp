@@ -16,6 +16,10 @@
 #include <vector>
 #include <chrono>
 
+#ifdef TEST_GET_AS_STRING
+    #include <sstream>
+#endif
+
 #ifdef __has_include
     #if __has_include(<string_view>)
         #include <string_view>
@@ -90,6 +94,10 @@ namespace gech {
         const std::chrono::time_point<
                 std::chrono::_V2::system_clock, std::chrono::duration<
                         long int, std::ratio<1, 1000000000>>> main_ms = std::chrono::system_clock::now();
+
+        #ifdef TEST_GET_AS_STRING
+            std::stringstream string_data;
+        #endif
     public:
         test(function_test func) : func(func) {
             this->fill_infos();
@@ -105,6 +113,18 @@ namespace gech {
         }
 
         void summary() {
+            #ifdef TEST_GET_AS_STRING
+                this->string_data << "\n[SUMMARY]\n"
+                                  << "File: "
+                                  << this->current_location.file_name()
+                                  << '\n'
+                                  << "Error/s: "
+                                  << this->errors
+                                  << '\n'
+                                  << since_time().count()
+                                  << "ns\n";
+            #endif
+
             std::cout << "\n[SUMMARY]\n"
                       << "File: "
                       << this->current_location.file_name()
@@ -151,8 +171,18 @@ namespace gech {
             this->infos.push_back(val);
             return val;
         }
-
         void draw_case(const gech::test_log_node& node) {
+            #ifdef TEST_GET_AS_STRING
+                if(node.result == Critical)
+                    this->string_data << "[CRITICAL]: ";
+                else if(node.result == Success)
+                    this->string_data << "[SUCCESS]: ";
+                else {
+                    this->string_data <<  "[FAILED]: ";
+                    ++this->errors;
+                }
+            #endif
+
             if(node.result == Critical)
                 std::cout << "[CRITICAL]: ";
             else if(node.result == Success)
@@ -168,6 +198,22 @@ namespace gech {
             auto info = this->infos.back();
 
             this->draw_case(info);
+
+            #ifdef TEST_GET_AS_STRING
+                this->string_data << "("
+                                  << this->current_location.file_name()
+                                  << ", "
+                                  << this->current_location.line()
+                                  << ":"
+                                  << this->current_location.column()
+                                  << ":"
+                                  << info.ms_took
+                                  << "ns"
+                                  << ") ["
+                                  << this->current_location.function_name()
+                                  << "] -> "
+                                  << info.data << '\n';
+            #endif
 
             std::cout << "("
                       << this->current_location.file_name()
@@ -294,6 +340,8 @@ namespace gech {
     int main(int argc, char** argv) { \
         test_reg.run_tests(); \
     }
+
+#define TEST_DATA test_reg
 
 #define ALLOC(name, type) \
     test_reg.assert_rc(); \
