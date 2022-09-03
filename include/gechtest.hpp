@@ -145,10 +145,10 @@ namespace gech {
         void run_tests() {
             this->infos.back().ms_took = this->calculate_time(this->func);
 
-            for(auto& test : this->infos) {
-                if(test.func != nullptr)
-                    test.ms_took = this->calculate_time(test.func);
-            }
+            // for(auto& test : this->infos) {
+            //     if(test.func != nullptr)
+            //         test.ms_took = this->calculate_time(test.func);
+            // }
         }
 
         void test_function(function_test test) {
